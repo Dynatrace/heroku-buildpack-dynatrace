@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# bin/compile <build-dir> <cache-dir> <env-dir>
+
+set -e   # fail fast
+# set -x # enable debugging
+
+# Configure directories
+BUILD_DIR=$1
+CACHE_DIR=$2
+ENV_DIR=$3
+BP_DIR=`cd $(dirname $0); cd ..; pwd`
+DT_BASE=${BUILD_DIR}/.dynatrace
+DT_DOWNLOAD_DIR=${CACHE_DIR}/dynatrace
+DT_PA_SUBPATH=dynatrace/oneagent/agent/lib64/liboneagentproc.so
+DT_ENV_SUBPATH=dynatrace/oneagent/dynatrace-env.sh
+DYNO_DT_BASE=/app/.dynatrace
+
+# Source helper functions file
+source $BP_DIR/bin/common.sh
+
+download_agent() {
+  URL="$1"
+  FILE="$2"
+  SSL_MODE="$3"
+  WGET_SSL_MODE=""
+  CURL_SSL_MODE=""
+
+  if [ "$SSL_MODE" == "all" ]; then
+    toConsoleInfo "Accepting all SSL certificates for OneAgent download"
+    WGET_SSL_MODE="--no-check-certificate"
+    CURL_SSL_MODE="--insecure"
+  fi
+
+  toConsoleInfo "Connecting to $URL"
+
+  ERROR=""
+  if validate_command_exists wget; then
+    ERROR=`wget ${WGET_SSL_MODE} -nv -O "${FILE}" "${URL}" 2>&1`
+  elif validate_command_exists curl; then
+    ERROR=`curl ${CURL_SSL_MODE} -fsSL -o "${FILE}" "${URL}" 2>&1`
+  else
+    toConsoleError "Failed to download Dynatrace OneAgent: neither curl nor wget are available"
+    exit 1
+  fi
+
+  if [ $? -ne 0 ]; then
+    rm -f "${FILE}"
+    toConsoleError "${ERROR}"
+    exit 1
+  fi
+}
+
+install_agent() {
+  URL="$1"
+  FILE="$DT_DOWNLOAD_DIR/dynatrace-oneagent.sh"
+  PREFIX_DIR="$2"
+  SSL_MODE="$3"
+
+  toConsoleInfo "Downloading Dynatrace OneAgent from cluster..."
+  download_agent "${URL}" "${FILE}" "${SSL_MODE}"
+  toConsoleInfo "Downloaded Dynatrace OneAgent to ${FILE}"
+
+  toConsoleInfo "Running Dynatrace OneAgent installer..."
+  sh "${FILE}" "${PREFIX_DIR}"
+  toConsoleInfo "Dynatrace OneAgent extracted to ${PREFIX_DIR}"
+# rm -f "${FILE}"
+}
+
+toConsoleInfo "BUILD_DIR = $BUILD_DIR"
+toConsoleInfo "CACHE_DIR = $CACHE_DIR"
+toConsoleInfo "ENV_DIR = $ENV_DIR"
+toConsoleInfo "BP_DIR = $BP_DIR"
+toConsoleInfo "DT_BASE = $DT_BASE"
+toConsoleInfo "DT_DOWNLOAD_DIR = $DT_DOWNLOAD_DIR"
+
+# Read environment variables
+export_env_dir ${ENV_DIR}
+
+# DT_TENANT and DT_API_TOKEN must be set
+if [ -z "${DT_DOWNLOAD_URL}" ] && ( [ -z "${DT_TENANT+x}" ] || [ -z "${DT_API_TOKEN+x}" ] ); then
+  toConsoleError "DT_TENANT and DT_API_TOKEN must be set. Please consult the Dynatrace help portal for details"
+  exit 1
+fi
+toConsoleInfo "Required environment configuration found for ${DT_TENANT}"
+
+# Creating directories# Ensure directories exists
+toConsoleInfo "Creating directories..."
+mkdir -p "$CACHE_DIR"
+mkdir -p "$DT_BASE"
+mkdir -p "$DT_DOWNLOAD_DIR"
+
+# Compile OneAgent Download URL
+DT_API_URL="${DT_API_URL:-https://$DT_TENANT.live.dynatrace.com/api}"
+DT_ONEAGENT_BITNESS=64
+DT_DOWNLOAD_URL="${DT_DOWNLOAD_URL:-$DT_API_URL/v1/deployment/installer/agent/unix/paas-sh/latest?Api-Token=$DT_API_TOKEN&bitness=$DT_ONEAGENT_BITNESS&arch=x86}"
+
+# Download and install the agent
+install_agent "${DT_DOWNLOAD_URL}" "${DT_BASE}" "${SSL_MODE}"
+
+# Set procfile
+toConsoleInfo "Configuring Dynatrace Oneagent..."
+#cat ${DT_BASE}/dynatrace/oneagent/manifest.json | python3 -c "import sys, json; jsonobj = json.load(sys.stdin)['technologies']['process']['linux-x86-64']; print ([binary['path'] for binary in jsonobj if ('binarytype' in binary.keys() and binary['binarytype'] == 'primary')])"
+mkdir -p $BUILD_DIR/.profile.d
+cp "${DT_BASE}/${DT_ENV_SUBPATH}" $BUILD_DIR/.profile.d/0dynatrace-env.sh
+echo "export LD_PRELOAD=${DYNO_DT_BASE}/${DT_PA_SUBPATH}" > $BUILD_DIR/.profile.d/1dynatrace-ldpreload.sh
+echo "export DT_LOGFILE=${DYNO_DT_BASE}/dynatrace/oneagent/log/agents.log" >> $BUILD_DIR/.profile.d/1dynatrace-ldpreload.sh
+
+toConsoleInfo "Dynatrace OneAgent configuration done"
+
+toConsoleInfo "Dynatrace OneAgent installed"

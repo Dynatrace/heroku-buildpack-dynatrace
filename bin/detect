@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+echo "Heroku Dynatrace Buildpack"
+exit 0
