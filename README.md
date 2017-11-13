@@ -45,6 +45,11 @@ The Dynatrace buildpack supports the following configurations:
 | DT_HOST_ID | *Optional* - The name to be used for the Dyno host entity in Dynatrace. The default name reported by Dyntrace is the Dyno hostname. |
 | DT_TAGS | *Optional* - The tags you want to add to the monitored apps. |
 
+## Disclaimer
+
+This buildpakc is supported by the Dynatrace Innovation Lab.
+Please create an issue for this repository if you need help.
+
 ## License
 
 Licensed under the MIT License. See the [LICENSE] file for details.
