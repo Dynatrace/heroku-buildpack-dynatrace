@@ -35,19 +35,19 @@ After pushing the changes the buildpack installs Dynatrace OneAgent to automatic
 
 The Dynatrace buildpack supports the following configurations:
 
-| Environment varialbe | Description|
+| Environment variable | Description|
 | --- | --- |
 | DT_TENANT | Your Dynatrace environment ID is the unique identifier of your Dynatrace environment. You can find it in the deploy Dynatrace section within your environment. |
 | DT_API_TOKEN | The token for integrating your Dynatrace environment with Heroku. You can find it in the deploy Dynatrace section within your environment. |
 | DT_API_URL | *Optional* - Replace with your Dynatrace Managed URL, including the environment ID. An example URL might look like the following `https://{your-managed-cluster.com}/e/{environmentid}/api` |
 | DT_DOWNLOAD_URL | *Optional* - A direct download URL for Dynatrace OneAgent. If this environment variable is set, the buildpack will download the OneAgent from this location. |
 | SSL_MODE | *Optional* - Set to `all` if you want to accept all self-signed SSL certificates |
-| DT_HOST_ID | *Optional* - The name to be used for the Dyno host entity in Dynatrace. The default name reported by Dyntrace is the Dyno hostname. |
+| DT_HOST_ID | *Optional* - The name to be used for the Dyno host entity in Dynatrace. The default name reported by Dynatrace is the Dyno hostname. |
 | DT_TAGS | *Optional* - The tags you want to add to the monitored apps. |
 
 ## Disclaimer
 
-This buildpakc is supported by the Dynatrace Innovation Lab.
+This buildpack is supported by the Dynatrace Innovation Lab.
 Please create an issue for this repository if you need help.
 
 ## License
