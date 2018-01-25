@@ -13,6 +13,7 @@ DT_BASE=${BUILD_DIR}/.dynatrace
 DT_DOWNLOAD_DIR=${CACHE_DIR}/dynatrace
 DT_PA_SUBPATH=dynatrace/oneagent/agent/lib64/liboneagentproc.so
 DT_ENV_SUBPATH=dynatrace/oneagent/dynatrace-env.sh
+DT_MANIFEST_SUBPATH=dynatrace/oneagent/manifest.json
 DYNO_DT_BASE=/app/.dynatrace
 
 # Source helper functions file
@@ -99,11 +100,30 @@ install_agent "${DT_DOWNLOAD_URL}" "${DT_BASE}" "${SSL_MODE}"
 
 # Set procfile
 toConsoleInfo "Configuring Dynatrace Oneagent..."
-#cat ${DT_BASE}/dynatrace/oneagent/manifest.json | python3 -c "import sys, json; jsonobj = json.load(sys.stdin)['technologies']['process']['linux-x86-64']; print ([binary['path'] for binary in jsonobj if ('binarytype' in binary.keys() and binary['binarytype'] == 'primary')])"
+
 mkdir -p $BUILD_DIR/.profile.d
-cp "${DT_BASE}/${DT_ENV_SUBPATH}" $BUILD_DIR/.profile.d/0dynatrace-env.sh
+#cat ${DT_BASE}/dynatrace/oneagent/manifest.json | python3 -c "import sys, json; jsonobj = json.load(sys.stdin)['technologies']['process']['linux-x86-64']; print ([binary['path'] for binary in jsonobj if ('binarytype' in binary.keys() and binary['binarytype'] == 'primary')])"
+
+# WORKAROUND: For pipelined heroku deployments until config comes with config files
+#cp "${DT_BASE}/${DT_ENV_SUBPATH}" $BUILD_DIR/.profile.d/0dynatrace-env.sh
+export DT_MANIFEST="$DT_BASE/$DT_MANIFEST_SUBPATH"
+toConsoleInfo "Extracting connection endpoints from $DT_MANIFEST"
+
+MANIFEST_TENANT=$(python3 -c 'import json,os; fp = open(os.environ["DT_MANIFEST"],"r"); obj=json.load(fp); fp.close(); print(obj["tenantUUID"])')
+MANIFEST_TOKEN=$(python3 -c 'import json,os; fp = open(os.environ["DT_MANIFEST"],"r"); obj=json.load(fp); fp.close(); print(obj["tenantToken"])')
+MANIFEST_ENDPOINTS=$(python3 -c 'import json,os; fp = open(os.environ["DT_MANIFEST"],"r"); obj=json.load(fp); fp.close(); print("%s" % ";".join(e for e in obj["communicationEndpoints"]))')
+
+echo "export DT_TENANT=\"\${DT_TENANT:-$MANIFEST_TENANT}\"" > $BUILD_DIR/.profile.d/0dynatrace-env.sh
+echo "export DT_TENANTTOKEN=\"\${DT_TENANTTOKEN:-$MANIFEST_TOKEN}\"" >> $BUILD_DIR/.profile.d/0dynatrace-env.sh
+echo "export DT_CONNECTION_POINT=\"\${DT_CONNECTION_POINT:-$MANIFEST_ENDPOINTS}\"" >> $BUILD_DIR/.profile.d/0dynatrace-env.sh
+# END WORKAROUND
+
 echo "export LD_PRELOAD=${DYNO_DT_BASE}/${DT_PA_SUBPATH}" > $BUILD_DIR/.profile.d/1dynatrace-ldpreload.sh
 echo "export DT_LOGFILE=${DYNO_DT_BASE}/dynatrace/oneagent/log/agents.log" >> $BUILD_DIR/.profile.d/1dynatrace-ldpreload.sh
+
+#update DT_HOST_ID to include the DYNO env (the container hosting the app instance)
+echo "export DT_HOST_ID=\${DT_HOST_ID}_\$DYNO" >> $BUILD_DIR/.profile.d/2dynatrace-clusterid.sh
+echo "export DT_IGNOREDYNAMICPORT=\${DT_IGNOREDYNAMICPORT:-true}" >> $BUILD_DIR/.profile.d/2dynatrace-clusterid.sh
 
 toConsoleInfo "Dynatrace OneAgent configuration done"
 
