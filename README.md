@@ -8,15 +8,11 @@ This buildpack deploys the [Dynatrace OneAgent] to automatically monitor the per
 
 ### Installation
 
-To install Dynatrace OneAgent to your project you need to add the Dynatrace buildpack to your project's buildpacks and set your Dynatrace environment ID and token.
+To install Dynatrace OneAgent to your existing project you need to add the Dynatrace buildpack to your project's buildpacks and set your Dynatrace environment ID and token.
 
 ```shell
-
-# Define the language-specific buildpack of your project (if not done already)
-heroku buildpacks:set heroku/java
-
 # Add the Dynatrace buildpack
-heroku buildpacks:add --index 1 https://github.com/Dynatrace/heroku-buildpack-dynatrace.git
+heroku buildpacks:add https://github.com/Dynatrace/heroku-buildpack-dynatrace.git
 
 # Set required credentials to your Dynatrace environment
 heroku config:set DT_TENANT=<your-environment-id>
