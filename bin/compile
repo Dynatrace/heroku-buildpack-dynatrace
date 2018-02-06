@@ -8,123 +8,133 @@ set -e   # fail fast
 BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
-BP_DIR=`cd $(dirname $0); cd ..; pwd`
-DT_BASE=${BUILD_DIR}/.dynatrace
-DT_DOWNLOAD_DIR=${CACHE_DIR}/dynatrace
-DT_PA_SUBPATH=dynatrace/oneagent/agent/lib64/liboneagentproc.so
-DT_ENV_SUBPATH=dynatrace/oneagent/dynatrace-env.sh
-DT_MANIFEST_SUBPATH=dynatrace/oneagent/manifest.json
-DYNO_DT_BASE=/app/.dynatrace
+#BP_DIR=`cd $(dirname $0); cd ..; pwd`
 
-# Source helper functions file
-source $BP_DIR/bin/common.sh
-
-download_agent() {
-  URL="$1"
-  FILE="$2"
-  SSL_MODE="$3"
-  WGET_SSL_MODE=""
-  CURL_SSL_MODE=""
-
-  if [ "$SSL_MODE" == "all" ]; then
-    toConsoleInfo "Accepting all SSL certificates for OneAgent download"
-    WGET_SSL_MODE="--no-check-certificate"
-    CURL_SSL_MODE="--insecure"
-  fi
-
-  toConsoleInfo "Connecting to $URL"
-
-  ERROR=""
-  if validate_command_exists wget; then
-    ERROR=`wget ${WGET_SSL_MODE} -nv -O "${FILE}" "${URL}" 2>&1`
-  elif validate_command_exists curl; then
-    ERROR=`curl ${CURL_SSL_MODE} -fsSL -o "${FILE}" "${URL}" 2>&1`
-  else
-    toConsoleError "Failed to download Dynatrace OneAgent: neither curl nor wget are available"
-    exit 1
-  fi
-
-  if [ $? -ne 0 ]; then
-    rm -f "${FILE}"
-    toConsoleError "${ERROR}"
-    exit 1
+export_env_dir() {
+  env_dir=$1
+  whitelist_regex=${2:-''}
+  blacklist_regex=${3:-'^(PATH|GIT_DIR|CPATH|CPPATH|LD_PRELOAD|LIBRARY_PATH)$'}
+  if [ -d "$env_dir" ]; then
+    for e in $(ls $env_dir); do
+      echo "$e" | grep -E "$whitelist_regex" | grep -qvE "$blacklist_regex" &&
+      export "$e=$(cat $env_dir/$e)"
+      :
+    done
   fi
 }
 
-install_agent() {
-  URL="$1"
-  FILE="$DT_DOWNLOAD_DIR/dynatrace-oneagent.sh"
-  PREFIX_DIR="$2"
-  SSL_MODE="$3"
+downloadAgent() {
+    local downloadUrl=$1
+    local installerFile=$2
 
-  toConsoleInfo "Downloading Dynatrace OneAgent from cluster..."
-  download_agent "${URL}" "${FILE}" "${SSL_MODE}"
-  toConsoleInfo "Downloaded Dynatrace OneAgent to ${FILE}"
+    # determine ssl mode
+    local SSL_INSECURE_CURL=""
+    local SSL_INSECURE_WGET=""
+    if [[ "$SSL_MODE" == "all" ]]; then
+        echo "Accepting all ssl certificates for agent download"
+        SSL_INSECURE_CURL="--insecure"
+        SSL_INSECURE_WGET="--no-check-certificate"
+    fi
 
-  toConsoleInfo "Running Dynatrace OneAgent installer..."
-  sh "${FILE}" "${PREFIX_DIR}"
-  toConsoleInfo "Dynatrace OneAgent extracted to ${PREFIX_DIR}"
-# rm -f "${FILE}"
+    if curl -h &> /dev/null ; then
+        local downloadCommand="curl -f --connect-timeout 10 $SSL_INSECURE_CURL ${downloadUrl} -o ${installerFile}"
+    elif wget -h &> /dev/null ; then
+        local downloadCommand="wget --connect-timeout=10 $SSL_INSECURE_WGET ${downloadUrl} -O ${installerFile}"
+    else
+        echo "ERROR: Neither curl nor wget executable found!"
+        exit 1
+    fi
+
+    local retryTimeout=0
+    local downloadErrors=0
+    while [[ $downloadErrors -lt 3 ]]; do
+        sleep $retryTimeout
+
+        echo "Downloading agent installer from ${downloadUrl}" | sed "s#$DT_API_TOKEN#DEDUCTED#g"
+        $downloadCommand
+        if [[ $? != 0 ]]; then
+            downloadErrors=$((downloadErrors+1))
+            retryTimeout=$($retryTimeout+5)
+
+            if [[ $downloadErrors -lt 3 ]]; then
+                echo "Dynatrace agent download failed, retrying in $retryTimeout seconds"
+            fi
+        else
+            break
+        fi
+    done
+
+    if [[ $downloadErrors == 3 ]]; then
+        echo "ERROR: Downloading agent installer failed!"
+        exit 1
+    fi
 }
 
-toConsoleInfo "BUILD_DIR = $BUILD_DIR"
-toConsoleInfo "CACHE_DIR = $CACHE_DIR"
-toConsoleInfo "ENV_DIR = $ENV_DIR"
-toConsoleInfo "BP_DIR = $BP_DIR"
-toConsoleInfo "DT_BASE = $DT_BASE"
-toConsoleInfo "DT_DOWNLOAD_DIR = $DT_DOWNLOAD_DIR"
+echo "BUILD_DIR = $BUILD_DIR"
+echo "CACHE_DIR = $CACHE_DIR"
+echo "ENV_DIR = $ENV_DIR"
 
 # Read environment variables
 export_env_dir ${ENV_DIR}
 
 # DT_TENANT and DT_API_TOKEN must be set
-if [ -z "${DT_DOWNLOAD_URL}" ] && ( [ -z "${DT_TENANT+x}" ] || [ -z "${DT_API_TOKEN+x}" ] ); then
-  toConsoleError "DT_TENANT and DT_API_TOKEN must be set. Please consult the Dynatrace help portal for details"
+if [ -z "${DT_TENANT}" ] || [ -z "${DT_API_TOKEN}" ]; then
+  toConsoleError "ERROR: DT_TENANT and DT_API_TOKEN must be set. Please consult the Dynatrace help portal for details"
   exit 1
 fi
-toConsoleInfo "Required environment configuration found for ${DT_TENANT}"
 
 # Creating directories# Ensure directories exists
-toConsoleInfo "Creating directories..."
-mkdir -p "$CACHE_DIR"
-mkdir -p "$DT_BASE"
-mkdir -p "$DT_DOWNLOAD_DIR"
+echo "Creating directories..."
+#mkdir -p "$CACHE_DIR"
+mkdir -p $BUILD_DIR/.profile.d
 
 # Compile OneAgent Download URL
 DT_API_URL="${DT_API_URL:-https://$DT_TENANT.live.dynatrace.com/api}"
-DT_ONEAGENT_BITNESS=64
-DT_DOWNLOAD_URL="${DT_DOWNLOAD_URL:-$DT_API_URL/v1/deployment/installer/agent/unix/paas-sh/latest?Api-Token=$DT_API_TOKEN&bitness=$DT_ONEAGENT_BITNESS&arch=x86}"
+DT_DOWNLOAD_URL="${DT_DOWNLOAD_URL:-$DT_API_URL/v1/deployment/installer/agent/unix/paas-sh/latest?Api-Token=$DT_API_TOKEN&arch=x86}"
+
+cat <<EOF | sed "s#$DT_API_TOKEN#DEDUCTED#g"
+Dynatrace deployment configuration:
+> DT_TENANT=$DT_TENANT
+> DT_API_TOKEN=$DT_API_TOKEN
+> DT_API_URL=$DT_API_URL
+> DT_DOWNLOAD_URL=$DT_DOWNLOAD_URL
+EOF
 
 # Download and install the agent
-install_agent "${DT_DOWNLOAD_URL}" "${DT_BASE}" "${SSL_MODE}"
+INSTALLER_FILE=$(mktemp)
+downloadAgent "${DT_DOWNLOAD_URL}" "${INSTALLER_FILE}"
+echo "Running Dynatrace OneAgent installer..."
+sh "${INSTALLER_FILE}" "${BUILD_DIR}"
 
 # Set procfile
-toConsoleInfo "Configuring Dynatrace Oneagent..."
+echo "Configuring Dynatrace Oneagent..."
 
-mkdir -p $BUILD_DIR/.profile.d
-#cat ${DT_BASE}/dynatrace/oneagent/manifest.json | python3 -c "import sys, json; jsonobj = json.load(sys.stdin)['technologies']['process']['linux-x86-64']; print ([binary['path'] for binary in jsonobj if ('binarytype' in binary.keys() and binary['binarytype'] == 'primary')])"
+# determine default values for connection parameters
+DT_MANIFEST="$BUILD_DIR/dynatrace/oneagent/manifest.json"
+echo "Extracting default connection parameters from $DT_MANIFEST"
 
-# WORKAROUND: For pipelined heroku deployments until config comes with config files
-#cp "${DT_BASE}/${DT_ENV_SUBPATH}" $BUILD_DIR/.profile.d/0dynatrace-env.sh
-export DT_MANIFEST="$DT_BASE/$DT_MANIFEST_SUBPATH"
-toConsoleInfo "Extracting connection endpoints from $DT_MANIFEST"
+MANIFEST_TENANT=$(python -c 'import json,sys; print json.load(sys.stdin)["tenantUUID"]' <$DT_MANIFEST)
+MANIFEST_TOKEN=$(python -c 'import json,sys; print json.load(sys.stdin)["tenantToken"]' <$DT_MANIFEST)
+MANIFEST_ENDPOINTS=$(python -c 'import sys, json; print ";".join(json.load(sys.stdin)["communicationEndpoints"])' <$DT_MANIFEST)
 
-MANIFEST_TENANT=$(python3 -c 'import json,os; fp = open(os.environ["DT_MANIFEST"],"r"); obj=json.load(fp); fp.close(); print(obj["tenantUUID"])')
-MANIFEST_TOKEN=$(python3 -c 'import json,os; fp = open(os.environ["DT_MANIFEST"],"r"); obj=json.load(fp); fp.close(); print(obj["tenantToken"])')
-MANIFEST_ENDPOINTS=$(python3 -c 'import json,os; fp = open(os.environ["DT_MANIFEST"],"r"); obj=json.load(fp); fp.close(); print("%s" % ";".join(e for e in obj["communicationEndpoints"]))')
+cat <<EOF >>$BUILD_DIR/.profile.d/dynatrace.sh
+# $BUILD_DIR/.profile.d/dynatrace.sh
+# generated by $0
+# support pipelined deployments by overriding default values
+export DT_TENANT="\${DT_TENANT:-$MANIFEST_TENANT}"
+export DT_TENANTTOKEN="\${DT_TENANTTOKEN:-$MANIFEST_TOKEN}"
+export DT_CONNECTION_POINT="\${DT_CONNECTION_POINT:-$MANIFEST_ENDPOINTS}"
+# preload process agent for injection (/etc/ld.so.preload is on read-only filesystem)
+export LD_PRELOAD="/app/dynatrace/oneagent/agent/lib64/liboneagentproc.so"
+# update DT_HOST_ID to include DYNO in order to get distinct entities in Dynatrace
+export DT_HOST_ID="\${DT_HOST_ID}_\${DYNO}"
+# ignore dynamic ports for service generation
+export DT_IGNOREDYNAMICPORT="\${DT_IGNOREDYNAMICPORT:-true}"
+EOF
 
-echo "export DT_TENANT=\"\${DT_TENANT:-$MANIFEST_TENANT}\"" > $BUILD_DIR/.profile.d/0dynatrace-env.sh
-echo "export DT_TENANTTOKEN=\"\${DT_TENANTTOKEN:-$MANIFEST_TOKEN}\"" >> $BUILD_DIR/.profile.d/0dynatrace-env.sh
-echo "export DT_CONNECTION_POINT=\"\${DT_CONNECTION_POINT:-$MANIFEST_ENDPOINTS}\"" >> $BUILD_DIR/.profile.d/0dynatrace-env.sh
-# END WORKAROUND
+echo "Dynatrace OneAgent configuration done"
+echo "================================================================================"
+cat $BUILD_DIR/.profile.d/dynatrace.sh
+echo "================================================================================"
 
-echo "export LD_PRELOAD=${DYNO_DT_BASE}/${DT_PA_SUBPATH}" > $BUILD_DIR/.profile.d/1dynatrace-ldpreload.sh
-echo "export DT_LOGFILE=${DYNO_DT_BASE}/dynatrace/oneagent/log/agents.log" >> $BUILD_DIR/.profile.d/1dynatrace-ldpreload.sh
-
-#update DT_HOST_ID to include the DYNO env (the container hosting the app instance)
-echo "export DT_HOST_ID=\${DT_HOST_ID}_\$DYNO" >> $BUILD_DIR/.profile.d/2dynatrace-clusterid.sh
-echo "export DT_IGNOREDYNAMICPORT=\${DT_IGNOREDYNAMICPORT:-true}" >> $BUILD_DIR/.profile.d/2dynatrace-clusterid.sh
-
-toConsoleInfo "Dynatrace OneAgent configuration done"
-
-toConsoleInfo "Dynatrace OneAgent installed"
+echo "Dynatrace OneAgent installed"
