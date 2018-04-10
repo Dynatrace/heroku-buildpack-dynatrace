@@ -1,20 +1,20 @@
 # Heroku Dynatrace Buildpack
 
-This Heroku buildpack installs the [Dynatrace OneAgent] for cloud-native monitoring of your Heroku applications.
+The Heroku buildpack for Dynatrace OneAgent enables cloud-native monitoring of your Heroku application by integrating Dynatrace OneAgent into your application’s slug and dyno.
 
 ## Usage
 
-This buildpack deploys the [Dynatrace OneAgent] to automatically monitor the performance of your application and microservices in Heroku. This buildpack requires an existing Dynatrace environment and is to be used in addition to the normal [Heroku Language Buildpack] of your project. Please note this buildpack is language independent and can be used with any Dynatrace supported language for your Heroku environment.
+This buildpack deploys the [Dynatrace OneAgent] to automatically monitor the performance of your application and microservices in Heroku. This buildpack requires an existing Dynatrace environment and is to be used in addition to the normal [Heroku Language Buildpack] of your project. Please note this buildpack is language-independent and can be used with any [Dynatrace supported language](https://www.dynatrace.com/support/help/technology-support/supported-versions-and-environments/which-environments-and-versions-does-dynatrace-support/#applications-services%E2%80%94databases) for your Heroku environment.
 
 ### Installation
 
-To install Dynatrace OneAgent to your existing project you need to add the Dynatrace buildpack to your project's buildpacks and set your Dynatrace environment ID and token.
+To integrate Dynatrace OneAgent into your existing project you need to add the Dynatrace buildpack to your project's buildpacks and set your Dynatrace environment ID and token. For complete details, please see the [Dynatrace Heroku installation guidelines](https://www.dynatrace.com/support/help/cloud-platforms/).
 
 ```shell
 # Add the Dynatrace buildpack
 heroku buildpacks:add https://github.com/Dynatrace/heroku-buildpack-dynatrace.git
 
-# Set required credentials to your Dynatrace environment
+# Set required credentials and link your Heroku application with your Dynatrace environment
 heroku config:set DT_TENANT=<your-environment-id>
 heroku config:set DT_API_TOKEN=<your-paas-token>
 
@@ -41,9 +41,6 @@ The Dynatrace buildpack supports the following configurations:
 | SSL_MODE | *Optional* - Set to `all` if you want to accept all self-signed SSL certificates |
 | DT_TAGS | *Optional* - The tags you want to add to the monitored apps. |
 
-## Disclaimer
-
-Use this buildpack on your own risk! Dynatrace does not support the implementation of this buildpack, however, the agents that are being deployed into your Heroku apps are fully supported.
 
 ## License
 
