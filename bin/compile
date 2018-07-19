@@ -93,7 +93,11 @@ puts_verbose "DT_DOWNLOAD_URL=$DT_DOWNLOAD_URL" | sed "s#$DT_API_TOKEN#DEDUCTED#
 
 # Download and install the agent
 INSTALLER_FILE=$(mktemp)
+# disable errexit temporarily as error handling is done explicitly by downloadAgent
+set +e
 downloadAgent "${DT_DOWNLOAD_URL}" "${INSTALLER_FILE}"
+set -e
+
 puts_step "Running Dynatrace OneAgent installer..."
 sh "${INSTALLER_FILE}" "${BUILD_DIR}"
 
