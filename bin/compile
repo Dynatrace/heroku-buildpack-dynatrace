@@ -47,7 +47,7 @@ downloadAgent() {
         $DOWNLOADCOMMAND
         if [[ $? != 0 ]]; then
             DOWNLOADERRORS=$((DOWNLOADERRORS+1))
-            RETRYTIMEOUT=$($RETRYTIMEOUT+5)
+            RETRYTIMEOUT=$(($RETRYTIMEOUT+5))
 
             if [[ $DOWNLOADERRORS -lt 3 ]]; then
                 puts_warn "Dynatrace OneAgent download failed, retrying in $RETRYTIMEOUT seconds"
