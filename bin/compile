@@ -49,7 +49,7 @@ downloadAgent() {
             DOWNLOADERRORS=$((DOWNLOADERRORS+1))
             RETRYTIMEOUT=$($RETRYTIMEOUT+5)
 
-            if [[ $downloadErrors -lt 3 ]]; then
+            if [[ $DOWNLOADERRORS -lt 3 ]]; then
                 puts_warn "Dynatrace OneAgent download failed, retrying in $RETRYTIMEOUT seconds"
             fi
         else
@@ -58,6 +58,10 @@ downloadAgent() {
     done
 
     if [[ $DOWNLOADERRORS == 3 ]]; then
+        if [[ $SKIP_ERRORS == 1 ]]; then
+            puts_warn "Error during installer download, skipping installation"
+            exit 0
+        fi
         puts_error "Downloading agent installer failed!"
         exit 1
     fi
