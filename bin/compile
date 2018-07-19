@@ -47,9 +47,9 @@ downloadAgent() {
         $DOWNLOADCOMMAND
         if [[ $? != 0 ]]; then
             DOWNLOADERRORS=$((DOWNLOADERRORS+1))
-            RETRYTIMEOUT=$($RETRYTIMEOUT+5)
+            RETRYTIMEOUT=$(($RETRYTIMEOUT+5))
 
-            if [[ $downloadErrors -lt 3 ]]; then
+            if [[ $DOWNLOADERRORS -lt 3 ]]; then
                 puts_warn "Dynatrace OneAgent download failed, retrying in $RETRYTIMEOUT seconds"
             fi
         else
@@ -58,12 +58,16 @@ downloadAgent() {
     done
 
     if [[ $DOWNLOADERRORS == 3 ]]; then
+        if [[ $SKIP_ERRORS == 1 ]]; then
+            puts_warn "Error during installer download, skipping installation"
+            exit 0
+        fi
         puts_error "Downloading agent installer failed!"
         exit 1
     fi
 }
 
-export_env $ENV_DIR '^(DT_|SSL_MODE|BUILDPACK_)' ''
+export_env $ENV_DIR '^(DT_|SSL_MODE|SKIP_ERRORS|BUILDPACK_)' ''
 
 # DT_TENANT and DT_API_TOKEN and DT_HOST_ID must be set
 if [ -z "${DT_TENANT}" ] || [ -z "${DT_API_TOKEN}" ] || [ -z "${DT_HOST_ID}" ]; then
@@ -89,7 +93,11 @@ puts_verbose "DT_DOWNLOAD_URL=$DT_DOWNLOAD_URL" | sed "s#$DT_API_TOKEN#DEDUCTED#
 
 # Download and install the agent
 INSTALLER_FILE=$(mktemp)
+# disable errexit temporarily as error handling is done explicitly by downloadAgent
+set +e
 downloadAgent "${DT_DOWNLOAD_URL}" "${INSTALLER_FILE}"
+set -e
+
 puts_step "Running Dynatrace OneAgent installer..."
 sh "${INSTALLER_FILE}" "${BUILD_DIR}"
 
