@@ -58,6 +58,7 @@ downloadAgent() {
     done
 
     if [[ $DOWNLOADERRORS == 3 ]]; then
+        echo "SKIP_ERRORS is set to: $SKIP_ERRORS"
         if [[ $SKIP_ERRORS == 1 ]]; then
             puts_warn "Error during installer download, skipping installation"
             exit 0
