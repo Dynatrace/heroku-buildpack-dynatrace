@@ -19,6 +19,7 @@ source "$BP_DIR/lib/stdlib.sh"
 downloadAgent() {
     local DOWNLOADURL=$1
     local INSTALLERFILE=$2
+    local IORIGINHEADER='x-dynatrace-iorigin:heroku'
 
     # determine ssl mode
     local SSL_INSECURE_CURL=""
@@ -30,9 +31,9 @@ downloadAgent() {
     fi
 
     if curl -h &> /dev/null ; then
-        local DOWNLOADCOMMAND="curl -fL --connect-timeout 10 $SSL_INSECURE_CURL ${DOWNLOADURL} -o ${INSTALLERFILE}"
+        local DOWNLOADCOMMAND="curl -fL --connect-timeout 10 $SSL_INSECURE_CURL ${DOWNLOADURL} -o ${INSTALLERFILE} --header ${IORIGINHEADER}"
     elif wget -h &> /dev/null ; then
-        local DOWNLOADCOMMAND="wget --connect-timeout=10 $SSL_INSECURE_WGET ${DOWNLOADURL} -O ${INSTALLERFILE}"
+        local DOWNLOADCOMMAND="wget --connect-timeout=10 $SSL_INSECURE_WGET ${DOWNLOADURL} -O ${INSTALLERFILE} --header=${IORIGINHEADER}"
     else
         puts_error "Neither curl nor wget executable found!"
         exit 1
