@@ -40,6 +40,7 @@ The Dynatrace buildpack supports the following configurations:
 | DT_DOWNLOAD_URL | *Optional* - A direct download URL for Dynatrace OneAgent. If this environment variable is set, the buildpack will download the OneAgent from this location. |
 | SSL_MODE | *Optional* - Set to `all` if you want to accept all self-signed SSL certificates |
 | DT_TAGS | *Optional* - The tags you want to add to the monitored apps. |
+| DT_LOCATION | *Optional* - To look for communication endpoints located on the indicated region. |
 | SKIP_ERRORS | *Optional* - If set to 1, app deployment won't fail on agent installer download errors |
 
 
