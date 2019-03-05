@@ -70,9 +70,9 @@ downloadAgent() {
 
 export_env $ENV_DIR '^(DT_|SSL_MODE|SKIP_ERRORS|BUILDPACK_)' ''
 
-# DT_TENANT and DT_API_TOKEN and DT_HOST_ID must be set
-if [ -z "${DT_TENANT}" ] || [ -z "${DT_API_TOKEN}" ] || [ -z "${DT_HOST_ID}" ]; then
-  puts_error "DT_TENANT, DT_API_TOKEN and DT_HOST_ID must be set. Please consult the Dynatrace help portal for details."
+# DT_TENANT and DT_API_TOKEN must be set
+if [ -z "${DT_TENANT}" ] || [ -z "${DT_API_TOKEN}" ]; then
+  puts_error "DT_TENANT and DT_API_TOKEN must be set. Please consult the Dynatrace help portal for details."
   exit 1
 fi
 
@@ -121,9 +121,6 @@ set_env "DT_CONNECTION_POINT" "\${DT_CONNECTION_POINT:-$MANIFEST_ENDPOINTS}"
 
 # preload process agent for injection (/etc/ld.so.preload is on read-only filesystem)
 set_env "LD_PRELOAD" "/app/dynatrace/oneagent/agent/lib64/liboneagentproc.so"
-
-# update DT_HOST_ID to include DYNO in order to get distinct entities in Dynatrace
-set_env "DT_HOST_ID" "\${DT_HOST_ID}_\${DYNO}"
 
 # ignore dynamic ports for service generation
 set_env "DT_IGNOREDYNAMICPORT" "\${DT_IGNOREDYNAMICPORT:-true}"
