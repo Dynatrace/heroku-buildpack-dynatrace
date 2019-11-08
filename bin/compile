@@ -18,8 +18,7 @@ source "$BP_DIR/lib/stdlib.sh"
 
 downloadAgent() {
     local DOWNLOADURL=$1
-    local DOWNLOADHEADER=$2
-    local INSTALLERFILE=$3
+    local INSTALLERFILE=$2
     local USERAGENT='heroku/1.0'
 
     # determine ssl mode
@@ -93,13 +92,13 @@ puts_verbose "DT_TENANT=$DT_TENANT"
 puts_verbose "DT_API_TOKEN=$DT_API_TOKEN" | sed "s#$DT_API_TOKEN#DEDUCTED#g"
 puts_verbose "DT_API_URL=$DT_API_URL"
 puts_verbose "DT_DOWNLOAD_URL=$DT_DOWNLOAD_URL" | sed "s#$DT_API_TOKEN#DEDUCTED#g"
-puts_verbose "DT_DOWNLOAD_HEADER=$DT_DOWNLOAD_HEADER"
+puts_verbose "DT_DOWNLOAD_HEADER=${DT_DOWNLOAD_HEADER}"
 
 # Download and install the agent
 INSTALLER_FILE=$(mktemp)
 # disable errexit temporarily as error handling is done explicitly by downloadAgent
 set +e
-downloadAgent "${DT_DOWNLOAD_URL}" "${DT_DOWNLOAD_HEADER}" "${INSTALLER_FILE}"
+downloadAgent "${DT_DOWNLOAD_URL}" "${INSTALLER_FILE}"
 set -e
 
 puts_step "Running Dynatrace OneAgent installer..."
