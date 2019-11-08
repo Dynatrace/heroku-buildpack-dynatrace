@@ -99,7 +99,7 @@ puts_verbose "DT_DOWNLOAD_HEADER=${DT_DOWNLOAD_HEADER}"
 INSTALLER_FILE=$(mktemp)
 # disable errexit temporarily as error handling is done explicitly by downloadAgent
 set +e
-downloadAgent "${DT_DOWNLOAD_URL} ${INSTALLER_FILE} ${DT_DOWNLOAD_HEADER}"
+downloadAgent "${DT_DOWNLOAD_URL}" "${INSTALLER_FILE}" "${DT_DOWNLOAD_HEADER}"
 set -e
 
 puts_step "Running Dynatrace OneAgent installer..."
