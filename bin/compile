@@ -19,6 +19,7 @@ source "$BP_DIR/lib/stdlib.sh"
 downloadAgent() {
     local DOWNLOADURL=$1
     local INSTALLERFILE=$2
+    local DOWNLOADHEADER=$3
     local USERAGENT='heroku/1.0'
 
     # determine ssl mode
@@ -98,7 +99,7 @@ puts_verbose "DT_DOWNLOAD_HEADER=${DT_DOWNLOAD_HEADER}"
 INSTALLER_FILE=$(mktemp)
 # disable errexit temporarily as error handling is done explicitly by downloadAgent
 set +e
-downloadAgent "${DT_DOWNLOAD_URL}" "${INSTALLER_FILE}"
+downloadAgent "${DT_DOWNLOAD_URL} ${INSTALLER_FILE} ${DT_DOWNLOAD_HEADER}"
 set -e
 
 puts_step "Running Dynatrace OneAgent installer..."
