@@ -32,7 +32,7 @@ downloadAgent() {
     fi
 
     if curl -h &> /dev/null ; then
-        local DOWNLOADCOMMAND="curl -fL --connect-timeout 10 $SSL_INSECURE_CURL ${DOWNLOADURL} -H Accept: application/json -H \"Authorization: Api-Token ${DOWNLOADHEADER}\" -o ${INSTALLERFILE} -A ${USERAGENT} -iv"
+        local DOWNLOADCOMMAND="curl -fL --connect-timeout 10 --insecure $SSL_INSECURE_CURL ${DOWNLOADURL} -H \"Authorization: Api-Token ${DOWNLOADHEADER}\" -o ${INSTALLERFILE} -A ${USERAGENT} -iv"
     elif wget -h &> /dev/null ; then
         local DOWNLOADCOMMAND="wget --connect-timeout=10 $SSL_INSECURE_WGET --header=${DOWNLOADHEADER} ${DOWNLOADURL} -O ${INSTALLERFILE} --user-agent=${USERAGENT}"
     else
