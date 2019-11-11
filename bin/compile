@@ -32,7 +32,7 @@ downloadAgent() {
     fi
 
     if curl -h &> /dev/null ; then
-        local DOWNLOADCOMMAND="curl -fL --connect-timeout 10 $SSL_INSECURE_CURL --header \"${DOWNLOADHEADER}\" \"${DOWNLOADURL}\" -o ${INSTALLERFILE} -A ${USERAGENT} -iv"
+        local DOWNLOADCOMMAND="curl -fL --connect-timeout 10 $SSL_INSECURE_CURL --header \"Authorization: Api-Token ${DOWNLOADHEADER}\" \"${DOWNLOADURL}\" -o ${INSTALLERFILE} -A ${USERAGENT} -iv"
     elif wget -h &> /dev/null ; then
         local DOWNLOADCOMMAND="wget --connect-timeout=10 $SSL_INSECURE_WGET --header=${DOWNLOADHEADER} ${DOWNLOADURL} -O ${INSTALLERFILE} --user-agent=${USERAGENT}"
     else
@@ -89,7 +89,7 @@ mkdir -p "$BUILD_DIR/.profile.d"
 # Compile OneAgent Download URL
 DT_API_URL="${DT_API_URL:-https://$DT_TENANT.live.dynatrace.com/api}"
 DT_DOWNLOAD_URL="${DT_DOWNLOAD_URL:-$DT_API_URL/v1/deployment/installer/agent/unix/paas-sh/latest?&arch=x86}"
-DT_DOWNLOAD_HEADER="Authorization: Api-Token ${DT_API_TOKEN}"
+DT_DOWNLOAD_HEADER="${DT_API_TOKEN}"
 
 puts_verbose "DT_TENANT=$DT_TENANT"
 puts_verbose "DT_API_TOKEN=$DT_API_TOKEN" | sed "s#$DT_API_TOKEN#DEDUCTED#g"
