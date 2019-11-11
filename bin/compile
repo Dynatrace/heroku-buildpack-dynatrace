@@ -32,7 +32,8 @@ downloadAgent() {
     fi
 
     if curl -h &> /dev/null ; then
-        local DOWNLOADCOMMAND="curl -fL --connect-timeout 10 --path-as-is $SSL_INSECURE_CURL ${DOWNLOADURL} -H \${DOWNLOADHEADER}\" -o ${INSTALLERFILE} -A ${USERAGENT} -iv"
+        curlopts=(-fL --connect-timeout 10 $SSL_INSECURE_CURL ${DOWNLOADURL} -H \${DOWNLOADHEADER}\" -o ${INSTALLERFILE} -A ${USERAGENT} -iv)
+        local DOWNLOADCOMMAND="" # curl ${curlopts[@]}
     elif wget -h &> /dev/null ; then
         local DOWNLOADCOMMAND="wget --connect-timeout=10 $SSL_INSECURE_WGET --header=${DOWNLOADHEADER} ${DOWNLOADURL} -O ${INSTALLERFILE} --user-agent=${USERAGENT}"
     else
@@ -48,7 +49,7 @@ downloadAgent() {
         puts_step "Downloading OneAgent installer..."
         echo "Download command=${DOWNLOADCOMMAND}"
         echo "Download header=${DOWNLOADHEADER}"
-        $DOWNLOADCOMMAND
+        curl "${curlopts[@]}" #$DOWNLOADCOMMAND
         if [[ $? != 0 ]]; then
             DOWNLOADERRORS=$((DOWNLOADERRORS+1))
             RETRYTIMEOUT=$(($RETRYTIMEOUT+5))
