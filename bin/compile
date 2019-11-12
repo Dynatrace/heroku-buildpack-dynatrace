@@ -46,7 +46,7 @@ downloadAgent() {
         sleep $RETRYTIMEOUT
 
         puts_step "Downloading OneAgent installer using ${DOWNLOADCOMMAND}..."
-        $DOWNLOADCOMMAND
+        eval "$DOWNLOADCOMMAND"
         if [[ $? != 0 ]]; then
             DOWNLOADERRORS=$((DOWNLOADERRORS+1))
             RETRYTIMEOUT=$(($RETRYTIMEOUT+5))
