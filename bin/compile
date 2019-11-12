@@ -32,7 +32,7 @@ downloadAgent() {
     fi
 
     if curl -h &> /dev/null ; then
-        local DOWNLOADCOMMAND="curl -Iv -s -S -f --connect-timeout 10 $SSL_INSECURE_CURL ${DOWNLOADURL} -o ${INSTALLERFILE} --create-dirs -A ${USERAGENT} -H '$DOWNLOADHEADER'"
+        local DOWNLOADCOMMAND="curl -Iv -s -S -f --connect-timeout 10 $SSL_INSECURE_CURL -H '$DOWNLOADHEADER' ${DOWNLOADURL} -o ${INSTALLERFILE} -A ${USERAGENT}"
     elif wget -h &> /dev/null ; then
         local DOWNLOADCOMMAND="wget --connect-timeout=10 $SSL_INSECURE_WGET --header=${DOWNLOADHEADER} ${DOWNLOADURL} -O ${INSTALLERFILE} --user-agent=${USERAGENT}"
     else
