@@ -112,6 +112,8 @@ puts_step "Configuring Dynatrace Oneagent..."
 # determine default values for connection parameters
 DT_MANIFEST="$BUILD_DIR/dynatrace/oneagent/manifest.json"
 
+#debug
+puts_step "with python3 support"
 MANIFEST_TENANT=$(python -c 'import json,sys; print(json.load(sys.stdin)["tenantUUID"])' <$DT_MANIFEST)
 MANIFEST_TOKEN=$(python -c 'import json,sys; print(json.load(sys.stdin)["tenantToken"])' <$DT_MANIFEST)
 MANIFEST_ENDPOINTS=$(python -c 'import sys, json; print(";".join(json.load(sys.stdin)["communicationEndpoints"]))' <$DT_MANIFEST)
