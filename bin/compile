@@ -94,7 +94,7 @@ puts_verbose "DT_TENANT=$DT_TENANT"
 puts_verbose "DT_API_TOKEN=$DT_API_TOKEN" | sed "s#$DT_API_TOKEN#DEDUCTED#g"
 puts_verbose "DT_API_URL=$DT_API_URL"
 puts_verbose "DT_DOWNLOAD_URL=$DT_DOWNLOAD_URL" | sed "s#$DT_API_TOKEN#DEDUCTED#g"
-puts_verbose "DT_DOWNLOAD_HEADER=${DT_DOWNLOAD_HEADER}"
+puts_verbose "DT_DOWNLOAD_HEADER=${DT_DOWNLOAD_HEADER}" | sed "s#$DT_API_TOKEN#DEDUCTED#g"
 
 # Download and install the agent
 INSTALLER_FILE=$(mktemp)
