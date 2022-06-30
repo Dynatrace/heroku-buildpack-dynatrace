@@ -4,11 +4,11 @@ The Heroku buildpack for Dynatrace OneAgent enables cloud-native monitoring of y
 
 ## Usage
 
-This buildpack deploys the [Dynatrace OneAgent] to automatically monitor the performance of your application and microservices in Heroku. This buildpack requires an existing Dynatrace environment and is to be used in addition to the normal [Heroku Language Buildpack] of your project. Please note this buildpack is language-independent and can be used with any [Dynatrace supported language](https://www.dynatrace.com/support/help/technology-support/supported-versions-and-environments/which-environments-and-versions-does-dynatrace-support/#applications-services%E2%80%94databases) for your Heroku environment.
+This buildpack deploys the [Dynatrace OneAgent] to automatically monitor the performance of your application and microservices in Heroku. This buildpack requires an existing Dynatrace environment and is to be used in addition to the normal [Heroku Language Buildpack] of your project. Please note this buildpack is language-independent and can be used with any [Dynatrace supported language](https://www.dynatrace.com/support/help/technology-support#applications-services-and-databases) for your Heroku environment.
 
 ### Installation
 
-To integrate Dynatrace OneAgent into your existing project you need to add the Dynatrace buildpack to your project's buildpacks and set your Dynatrace environment ID and token. For complete details, please see the [Dynatrace Heroku installation guidelines](https://www.dynatrace.com/support/help/cloud-platforms/heroku/how-do-i-monitor-heroku-applications/).
+To integrate Dynatrace OneAgent into your existing project you need to add the Dynatrace buildpack to your project's buildpacks and set your Dynatrace environment ID and token. For complete details, please see the [Dynatrace Heroku installation guidelines](https://www.dynatrace.com/support/help/how-to-use-dynatrace/infrastructure-monitoring/cloud-platform-monitoring/heroku-monitoring).
 
 ```shell
 # Add a released version of the Dynatrace Heroku buildpack:
@@ -44,6 +44,6 @@ The Dynatrace buildpack supports the following configurations:
 
 Licensed under the MIT License. See the [LICENSE] file for details.
 
-[Dynatrace OneAgent]: https://www.dynatrace.com
+[Dynatrace OneAgent]: https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-oneagent
 [Heroku Language Buildpack]: https://devcenter.heroku.com/articles/buildpacks#default-buildpacks
 [LICENSE]: https://github.com/dynatrace/heroku-buildpack-dynatrace/blob/master/LICENSE
