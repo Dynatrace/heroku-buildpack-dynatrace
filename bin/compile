@@ -39,7 +39,7 @@ downloadAgent() {
         puts_error "Neither curl nor wget executable found!"
         exit 1
     fi
-    
+
     local RETRYTIMEOUT=0
     local DOWNLOADERRORS=0
     while [[ $DOWNLOADERRORS -lt 3 ]]; do
@@ -47,7 +47,7 @@ downloadAgent() {
 
         puts_step "Downloading OneAgent installer from ${DOWNLOADURL}"
         $DOWNLOADCOMMAND --header "$DOWNLOADHEADER"
-    
+
         if [[ $? != 0 ]]; then
             DOWNLOADERRORS=$((DOWNLOADERRORS+1))
             RETRYTIMEOUT=$(($RETRYTIMEOUT+5))
@@ -85,9 +85,14 @@ puts_verbose "ENV_DIR = $ENV_DIR"
 # Creating directories# Ensure directories exists
 mkdir -p "$BUILD_DIR/.profile.d"
 
+if [[ ! -v DT_TECHNOLOGY ]]; then
+    puts_warn "No technology specified, falling back to 'all'"
+    DT_TECHNOLOGY="all"
+fi
+
 # Compile OneAgent Download URL
 DT_API_URL="${DT_API_URL:-https://$DT_TENANT.live.dynatrace.com/api}"
-DT_DOWNLOAD_URL="${DT_DOWNLOAD_URL:-$DT_API_URL/v1/deployment/installer/agent/unix/paas-sh/latest?&arch=x86}"
+DT_DOWNLOAD_URL="${DT_DOWNLOAD_URL:-$DT_API_URL/v1/deployment/installer/agent/unix/paas-sh/latest?&arch=x86&include=${DT_TECHNOLOGY}}"
 DT_DOWNLOAD_HEADER="Authorization: Api-Token ${DT_API_TOKEN}"
 
 puts_verbose "DT_TENANT=$DT_TENANT"
