@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # bin/compile <build-dir> <cache-dir> <env-dir>
 
-set -e   # fail fast
-# set -x # enable debugging
+set -eu -o pipefail
 
 # Configure directories
 BUILD_DIR=$1
