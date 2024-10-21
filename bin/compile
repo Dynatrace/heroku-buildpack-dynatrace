@@ -7,7 +7,7 @@ set -e -o pipefail
 BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
-BP_DIR=`cd $(dirname $0); cd ..; pwd`
+BP_DIR="$(cd "$(dirname "$0")"; cd ..; pwd)"
 
 PROFILE_PATH="$BUILD_DIR/.profile.d/dynatrace.sh"
 EXPORT_PATH=/dev/null
@@ -69,7 +69,7 @@ downloadAgent() {
     fi
 }
 
-export_env $ENV_DIR '^(DT_|SSL_MODE|SKIP_ERRORS|BUILDPACK_)' ''
+export_env "$ENV_DIR" '^(DT_|SSL_MODE|SKIP_ERRORS|BUILDPACK_)' ''
 
 # DT_TENANT and DT_API_TOKEN must be set
 if [ -z "${DT_TENANT}" ] || [ -z "${DT_API_TOKEN}" ]; then
@@ -116,11 +116,11 @@ puts_step "Configuring Dynatrace Oneagent..."
 # determine default values for connection parameters
 DT_MANIFEST="$BUILD_DIR/dynatrace/oneagent/manifest.json"
 
-MANIFEST_TENANT=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["tenantUUID"])' <$DT_MANIFEST)
-MANIFEST_TOKEN=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["tenantToken"])' <$DT_MANIFEST)
-MANIFEST_ENDPOINTS=$(python3 -c 'import sys, json; print(";".join(json.load(sys.stdin)["communicationEndpoints"]))' <$DT_MANIFEST)
+MANIFEST_TENANT="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["tenantUUID"])' <$DT_MANIFEST)"
+MANIFEST_TOKEN="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["tenantToken"])' <$DT_MANIFEST)"
+MANIFEST_ENDPOINTS="$(python3 -c 'import sys, json; print(";".join(json.load(sys.stdin)["communicationEndpoints"]))' <$DT_MANIFEST)"
 
-VERSION=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])' <$DT_MANIFEST)
+VERSION="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])' <$DT_MANIFEST)"
 
 # support pipelined deployments by overriding default values
 set_env "DT_TENANT" "\${DT_TENANT:-$MANIFEST_TENANT}"
