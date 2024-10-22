@@ -38,6 +38,7 @@ The Dynatrace buildpack supports the following configurations:
 | DT_TAGS | *Optional* - The tags you want to add to the monitored apps. |
 | DT_NETWORK_ZONE | *Optional* - To look for communication endpoints located on the indicated region. |
 | SKIP_ERRORS | *Optional* - If set to 1, app deployment won't fail on agent installer download errors |
+| DT_TECHNOLOGY | *Optional* - Configure specific OneAgent codemodules. This will potentially decrease the required disk space a lot. Falls back to `all` when not set, therefore including all suported technologies. Supported values can be found on https://docs.dynatrace.com/docs/dynatrace-api/environment-api/deployment/oneagent/download-oneagent-version#parameters in the "include" row |
 
 
 ## License

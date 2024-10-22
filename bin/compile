@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # bin/compile <build-dir> <cache-dir> <env-dir>
 
-set -e   # fail fast
-# set -x # enable debugging
+set -e -o pipefail
 
 # Configure directories
 BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
-BP_DIR=`cd $(dirname $0); cd ..; pwd`
+BP_DIR="$(cd "$(dirname "$0")"; cd ..; pwd)"
 
 PROFILE_PATH="$BUILD_DIR/.profile.d/dynatrace.sh"
 EXPORT_PATH=/dev/null
@@ -39,7 +38,7 @@ downloadAgent() {
         puts_error "Neither curl nor wget executable found!"
         exit 1
     fi
-    
+
     local RETRYTIMEOUT=0
     local DOWNLOADERRORS=0
     while [[ $DOWNLOADERRORS -lt 3 ]]; do
@@ -47,7 +46,7 @@ downloadAgent() {
 
         puts_step "Downloading OneAgent installer from ${DOWNLOADURL}"
         $DOWNLOADCOMMAND --header "$DOWNLOADHEADER"
-    
+
         if [[ $? != 0 ]]; then
             DOWNLOADERRORS=$((DOWNLOADERRORS+1))
             RETRYTIMEOUT=$(($RETRYTIMEOUT+5))
@@ -70,7 +69,7 @@ downloadAgent() {
     fi
 }
 
-export_env $ENV_DIR '^(DT_|SSL_MODE|SKIP_ERRORS|BUILDPACK_)' ''
+export_env "$ENV_DIR" '^(DT_|SSL_MODE|SKIP_ERRORS|BUILDPACK_)' ''
 
 # DT_TENANT and DT_API_TOKEN must be set
 if [ -z "${DT_TENANT}" ] || [ -z "${DT_API_TOKEN}" ]; then
@@ -85,9 +84,14 @@ puts_verbose "ENV_DIR = $ENV_DIR"
 # Creating directories# Ensure directories exists
 mkdir -p "$BUILD_DIR/.profile.d"
 
+if [[ ! -v DT_TECHNOLOGY ]]; then
+    puts_warn "No technology specified, falling back to 'all'"
+    DT_TECHNOLOGY="all"
+fi
+
 # Compile OneAgent Download URL
 DT_API_URL="${DT_API_URL:-https://$DT_TENANT.live.dynatrace.com/api}"
-DT_DOWNLOAD_URL="${DT_DOWNLOAD_URL:-$DT_API_URL/v1/deployment/installer/agent/unix/paas-sh/latest?&arch=x86}"
+DT_DOWNLOAD_URL="${DT_DOWNLOAD_URL:-$DT_API_URL/v1/deployment/installer/agent/unix/paas-sh/latest?&arch=x86&include=${DT_TECHNOLOGY}}"
 DT_DOWNLOAD_HEADER="Authorization: Api-Token ${DT_API_TOKEN}"
 
 puts_verbose "DT_TENANT=$DT_TENANT"
@@ -112,11 +116,11 @@ puts_step "Configuring Dynatrace Oneagent..."
 # determine default values for connection parameters
 DT_MANIFEST="$BUILD_DIR/dynatrace/oneagent/manifest.json"
 
-MANIFEST_TENANT=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["tenantUUID"])' <$DT_MANIFEST)
-MANIFEST_TOKEN=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["tenantToken"])' <$DT_MANIFEST)
-MANIFEST_ENDPOINTS=$(python3 -c 'import sys, json; print(";".join(json.load(sys.stdin)["communicationEndpoints"]))' <$DT_MANIFEST)
+MANIFEST_TENANT="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["tenantUUID"])' <$DT_MANIFEST)"
+MANIFEST_TOKEN="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["tenantToken"])' <$DT_MANIFEST)"
+MANIFEST_ENDPOINTS="$(python3 -c 'import sys, json; print(";".join(json.load(sys.stdin)["communicationEndpoints"]))' <$DT_MANIFEST)"
 
-VERSION=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])' <$DT_MANIFEST)
+VERSION="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])' <$DT_MANIFEST)"
 
 # support pipelined deployments by overriding default values
 set_env "DT_TENANT" "\${DT_TENANT:-$MANIFEST_TENANT}"
