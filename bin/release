@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+cat <<<EOF
+---
+{}
+EOF
+
+exit 0
